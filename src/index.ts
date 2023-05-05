@@ -5,7 +5,7 @@ export interface Env {
   CACHE_DURATION?: number;
 }
 
-const maxAge = 90 * 24 * 60 * 60; // 180 day default cache time
+const maxAge = 180 * 24 * 60 * 60; // 180 day default cache time
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -22,6 +22,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
 
   // Cloudflare-specific options are in the cf object.
   let resizeOptions:any = {}
+  let type = 'jpeg'
 
   // Copy parameters from query string to request options.
   // You can implement various different parameters here.
@@ -38,8 +39,10 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   const accept = request.headers.get("Accept") || ''
   if (/image\/avif/.test(accept)) {
     resizeOptions.format = 'avif'
+    type = 'avif'
   } else if (/image\/webp/.test(accept)) {
     resizeOptions.format = 'webp'
+    type = 'webp'
   }
 
   // Get URL of the original (full size) image to resize.
@@ -48,9 +51,8 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   const imageURL = atob(imageURLBase64)
 
   // Check that this is a valid URL
+  const { hostname, pathname } = new URL(imageURL)
   try {
-    const { hostname, pathname } = new URL(imageURL)
-
      if (!/\.(jpe?g|png|gif|webp)$/i.test(pathname)) {
       return new Response('Disallowed file extension', { status: 400 })
     }
@@ -62,10 +64,13 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
     return new Response('Invalid "image" value', { status: 400 })
   }
 
+  // set mime types if not already done
+  if (!/\.(png)$/i.test(pathname)) { type = 'png' }
+  if (!/\.(gif)$/i.test(pathname)) { type = 'gif' }
   
 
   const optionsKey = Object.entries(resizeOptions).map(([key, val]) => `${key}:${val}`).join('-')
-  const cacheKey = imageURL + optionsKey
+  const cacheKey = 'test-' + imageURL + optionsKey
   const cache = caches.default;
 
   // Check whether the value is already available in the cache
@@ -111,10 +116,10 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
     'cache-control': `public, max-age=${env.CACHE_DURATION ?? maxAge}`,
     'access-control-allow-origin': '*',
     'content-security-policy': "default-src 'none'; navigate-to 'none'; form-action 'none'",
-    'content-type': 'image/jpeg'
+    'content-type': 'image/' + type
   })
-  
-  response = new Response(image)
+
+  response = new Response(image, { headers })
 
   // Save the response to the cache for next time
   ctx.waitUntil(cache.put(url.toString(), response.clone()))
