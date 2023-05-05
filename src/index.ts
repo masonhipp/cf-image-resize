@@ -65,8 +65,8 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   }
 
   // set mime types if not already done
-  if (!/\.(png)$/i.test(pathname)) { type = 'png' }
-  if (!/\.(gif)$/i.test(pathname)) { type = 'gif' }
+  if (/\.(png)$/i.test(pathname)) { type = 'png' }
+  if (/\.(gif)$/i.test(pathname)) { type = 'gif' }
   
 
   const optionsKey = Object.entries(resizeOptions).map(([key, val]) => `${key}:${val}`).join('-')
