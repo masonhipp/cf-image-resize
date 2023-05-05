@@ -56,13 +56,13 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   const { hostname, pathname } = new URL(imageURL)
   try {
      if (!/\.(jpe?g|png|gif|webp)$/i.test(pathname)) {
-      console.log('Disallowed pathname: ', pathname)
+      console.log('Disallowed pathname/extension: ', pathname)
       return new Response('Disallowed file extension', { status: 400 })
     }
     
-    const allowedHosts = ['s3.medialoot.com', 'medialoot.com', 'www.medialoot.com']
+    const allowedHosts = ['s3.medialoot.com', 'medialoot.com', 'www.medialoot.com', 's3.amazonaws.com']
     if (!allowedHosts.includes(hostname)) {
-      console.log('Disallowed hostname: ', hostname)
+      console.log('Disallowed hostname: ', imageURL)
       return new Response('Invalid url for source images', { status: 403 })
     }
   } catch (err) {
@@ -81,11 +81,15 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   // Check whether the value is already available in the cache
   // if not, fetch it from R2, and store it in the cache
   let response = await cache.match(url.toString())
-  if (response) return response
+  if (response) {
+    console.log(`Cache hit for: ${cacheKey}.`)
+    return response
+  }
   console.log(`Cache miss for: ${cacheKey}.`)
 
   // Try to get it from R2
   let image = await (await env.CACHE_BUCKET.get(cacheKey))?.arrayBuffer()
+  if (image) { console.log(`R2 hit for: ${cacheKey}.`) }
   if (!image) {
     console.log(`R2 miss for: ${cacheKey}.`)
 
