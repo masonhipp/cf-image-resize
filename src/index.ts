@@ -59,10 +59,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
       console.log('Disallowed pathname: ', pathname)
       return new Response('Disallowed file extension', { status: 400 })
     }
-
-    if (hostname !== 's3.medialoot.com') {
+    
+    const allowedHosts = ['s3.medialoot.com', 'medialoot.com', 'www.medialoot.com']
+    if (!allowedHosts.includes(hostname)) {
       console.log('Disallowed hostname: ', hostname)
-     return new Response('Invalid url for source images', { status: 403 })
+      return new Response('Invalid url for source images', { status: 403 })
     }
   } catch (err) {
     return new Response('Invalid "image" value', { status: 400 })
@@ -74,7 +75,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   
 
   const optionsKey = Object.entries(resizeOptions).map(([key, val]) => `${key}:${val}`).join('-')
-  const cacheKey = 'test-' + imageURL + optionsKey
+  const cacheKey = 'v2-' + imageURLBase64 + '-' + optionsKey
   const cache = caches.default;
 
   // Check whether the value is already available in the cache
