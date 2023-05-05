@@ -69,9 +69,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
     return new Response('Invalid "image" value', { status: 400 })
   }
 
-  // set mime types if not already done
-  if (/\.(png)$/i.test(pathname)) { type = 'png' }
-  if (/\.(gif)$/i.test(pathname)) { type = 'gif' }
+  // set mime types if not already set to avif or webp
+  if (!['avif', 'webp'].includes(type)) {
+    if (/\.(png)$/i.test(pathname)) { type = 'png' }
+    if (/\.(gif)$/i.test(pathname)) { type = 'gif' }
+  }
   
 
   const optionsKey = Object.entries(resizeOptions).map(([key, val]) => `${key}:${val}`).join('-')
