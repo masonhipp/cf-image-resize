@@ -1,3 +1,5 @@
+import { Base64 } from 'js-base64';
+
 export interface Env {
   CACHE_BUCKET: R2Bucket;
   IMAGE_ROOT: string;
@@ -48,7 +50,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   // Get URL of the original (full size) image to resize.
   const imageURLBase64 = url.searchParams.get("src")
   if (!imageURLBase64) return new Response('Missing "image" value', { status: 400 })
-  const imageURL = atob(imageURLBase64)
+  const imageURL = Base64.atob(imageURLBase64)
 
   // Check that this is a valid URL
   const { hostname, pathname } = new URL(imageURL)
