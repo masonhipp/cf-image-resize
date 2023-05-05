@@ -50,16 +50,18 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   // Get URL of the original (full size) image to resize.
   const imageURLBase64 = url.searchParams.get("src")
   if (!imageURLBase64) return new Response('Missing "image" value', { status: 400 })
-  const imageURL = Base64.atob(imageURLBase64)
+  const imageURL = Base64.decode(imageURLBase64)
 
   // Check that this is a valid URL
   const { hostname, pathname } = new URL(imageURL)
   try {
      if (!/\.(jpe?g|png|gif|webp)$/i.test(pathname)) {
+      console.log('Disallowed pathname: ', pathname)
       return new Response('Disallowed file extension', { status: 400 })
     }
 
     if (hostname !== 's3.medialoot.com') {
+      console.log('Disallowed hostname: ', hostname)
      return new Response('Invalid url for source images', { status: 403 })
     }
   } catch (err) {
